@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TransitApp</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0f1e; --surface: #111827; --surface2: #1a2438;
+      --accent: #00e5ff; --accent2: #7c3aed; --text: #f0f4ff;
+      --muted: #8896b3; --border: rgba(0,229,255,0.12);
+      --success: #10b981; --warning: #f59e0b; --danger: #f87171;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(10,15,30,0.97); border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 100; gap: 12px; flex-wrap: wrap; }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; color: var(--text); white-space: nowrap; }
+    .logo span { color: var(--accent); }
+    .lang-row { display: flex; gap: 6px; }
+    .lang-btn { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 0.78rem; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+    .lang-btn.active { background: rgba(0,229,255,0.12); border-color: rgba(0,229,255,0.4); color: var(--accent); }
+    .main { display: flex; flex: 1; overflow: hidden; }
+    .sidebar { width: 380px; flex-shrink: 0; background: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+    .sidebar-inner { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+    .section-label { font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+    .input-group { display: flex; flex-direction: column; gap: 8px; }
+    .input-wrap { position: relative; display: flex; align-items: center; }
+    .input-wrap .dot { position: absolute; inset-inline-start: 14px; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; pointer-events: none; }
+    .dot-from { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .dot-to { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+    .input-wrap input { width: 100%; padding: 11px 11px 11px 36px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: inherit; font-size: 0.88rem; outline: none; transition: border-color 0.2s; }
+    body[dir="rtl"] .input-wrap input { padding: 11px 36px 11px 11px; text-align: right; }
+    .input-wrap input:focus { border-color: rgba(0,229,255,0.4); box-shadow: 0 0 0 3px rgba(0,229,255,0.07); }
+    .input-wrap input::placeholder { color: var(--muted); }
+    .connector { width: 2px; height: 8px; background: linear-gradient(to bottom, var(--accent), var(--accent2)); margin-inline-start: 18px; border-radius: 2px; }
+    .mode-row { display: flex; gap: 7px; }
+    .mode-btn { flex: 1; padding: 8px 4px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-family: inherit; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .mode-btn .icon { font-size: 1rem; }
+    .mode-btn.active { background: rgba(0,229,255,0.1); border-color: rgba(0,229,255,0.4); color: var(--accent); }
+    .mode-btn:hover:not(.active) { border-color: rgba(255,255,255,0.15); color: var(--text); }
+    .time-block { display: flex; flex-direction: column; gap: 8px; }
+    .time-type-row { display: flex; gap: 7px; }
+    .time-type-btn { flex: 1; padding: 7px 4px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-family: inherit; font-size: 0.78rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .time-type-btn.active { background: rgba(124,58,237,0.15); border-color: rgba(124,58,237,0.4); color: #a78bfa; }
+    .time-inputs { display: flex; gap: 7px; }
+    .time-inputs input[type="datetime-local"] { flex: 1; padding: 9px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: inherit; font-size: 0.82rem; outline: none; transition: border-color 0.2s; }
+    .time-inputs input[type="datetime-local"]:focus { border-color: rgba(0,229,255,0.4); }
+    .time-inputs input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
+    .now-btn { padding: 9px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-family: inherit; font-size: 0.8rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .now-btn:hover { border-color: rgba(0,229,255,0.3); color: var(--accent); }
+    .go-btn { width: 100%; padding: 13px; background: linear-gradient(135deg, var(--accent), #00b8d4); border: none; border-radius: 10px; color: #0a0f1e; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.5px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(0,229,255,0.22); }
+    .go-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(0,229,255,0.32); }
+    .go-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .divider { height: 1px; background: var(--border); }
+    .results-list { display: flex; flex-direction: column; gap: 9px; }
+
+    /* ── Result Cards ── */
+    .result-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 13px; cursor: pointer; transition: all 0.2s; animation: slideIn 0.3s ease forwards; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .result-card:hover { border-color: rgba(0,229,255,0.3); }
+    .result-card.selected { border-color: rgba(0,229,255,0.5); background: rgba(0,229,255,0.06); }
+    .result-card.best-now { } /* no special border — badge only */
+
+    .result-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 8px; }
+    .result-times { display: flex; flex-direction: column; gap: 3px; }
+    .result-duration { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; }
+    .result-arrival { font-size: 0.8rem; color: var(--accent); font-weight: 500; }
+    .result-depart { font-size: 0.75rem; color: var(--muted); }
+
+    /* ── Scheduled vs Live comparison ── */
+    .traffic-compare { margin-top: 5px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .sched-time { font-size: 0.75rem; color: var(--muted); text-decoration: line-through; }
+    .live-time { font-size: 0.78rem; font-weight: 600; }
+    .live-time.delayed { color: var(--danger); }
+    .live-time.on-time { color: var(--success); }
+    .delay-arrow { font-size: 0.7rem; color: var(--muted); }
+    .delay-pill { font-size: 0.68rem; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
+    .delay-pill.delayed { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .delay-pill.on-time { background: rgba(16,185,129,0.15); color: var(--success); }
+
+    .result-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .traffic-badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+    .traffic-low { background: rgba(16,185,129,0.15); color: var(--success); }
+    .traffic-med { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .traffic-high { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .fastest-badge { font-size: 0.68rem; padding: 2px 7px; border-radius: 20px; background: rgba(0,229,255,0.12); color: var(--accent); border: 1px solid rgba(0,229,255,0.25); }
+    .best-now-badge { font-size: 0.68rem; padding: 2px 7px; border-radius: 20px; background: rgba(0,229,255,0.2); color: var(--accent); border: 1px solid rgba(0,229,255,0.4); font-weight: 700; }
+
+    .result-steps { display: flex; gap: 5px; flex-wrap: wrap; margin: 8px 0 5px; }
+    .step-tag { font-size: 0.73rem; padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,0.05); color: var(--muted); }
+    .step-tag.transit { background: rgba(124,58,237,0.15); color: #a78bfa; }
+    .result-meta { font-size: 0.73rem; color: var(--muted); }
+
+    /* ── Traffic legend ── */
+    .traffic-legend { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; flex-wrap: wrap; }
+    .legend-title { font-size: 0.7rem; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; }
+    .legend-items { display: flex; gap: 10px; }
+    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 0.68rem; color: var(--muted); }
+    .legend-dot { width: 10px; height: 4px; border-radius: 2px; }
+    .legend-dot.green { background: #10b981; }
+    .legend-dot.orange { background: #f59e0b; }
+    .legend-dot.red { background: #ef4444; }
+
+    .loading { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.85rem; padding: 10px 0; }
+    .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-msg { color: var(--danger); font-size: 0.82rem; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; padding: 10px 12px; }
+    .empty-state { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 24px 0; line-height: 1.7; }
+    .empty-state .big { font-size: 1.8rem; margin-bottom: 8px; }
+    #map { flex: 1; }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    body[dir="rtl"] .pac-container { text-align: right; direction: rtl; }
+  </style>
+</head>
+<body dir="ltr">
+<header>
+  <div class="logo">Transit<span>App</span></div>
+  <div class="lang-row">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('he')">עב</button>
+    <button class="lang-btn" onclick="setLang('ru')">РУ</button>
+  </div>
+</header>
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-inner">
+      <div>
+        <div class="section-label" data-i18n="planRoute">Plan your route</div>
+        <div class="input-group">
+          <div class="input-wrap">
+            <div class="dot dot-from"></div>
+            <input type="text" id="origin" data-i18n-placeholder="fromPlaceholder" placeholder="From (e.g. Tel Aviv Savidor)"/>
+          </div>
+          <div class="connector"></div>
+          <div class="input-wrap">
+            <div class="dot dot-to"></div>
+            <input type="text" id="destination" data-i18n-placeholder="toPlaceholder" placeholder="To (e.g. Dizengoff Center)"/>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="section-label" data-i18n="travelMode">Travel mode</div>
+        <div class="mode-row">
+          <button class="mode-btn active" data-mode="TRANSIT" onclick="setMode(this)"><span class="icon">🚌</span><span data-i18n="transit">Transit</span></button>
+          <button class="mode-btn" data-mode="DRIVING" onclick="setMode(this)"><span class="icon">🚗</span><span data-i18n="drive">Drive</span></button>
+          <button class="mode-btn" data-mode="WALKING" onclick="setMode(this)"><span class="icon">🚶</span><span data-i18n="walk">Walk</span></button>
+        </div>
+      </div>
+      <div class="time-block">
+        <div class="section-label" data-i18n="timeLabel">Departure / Arrival</div>
+        <div class="time-type-row">
+          <button class="time-type-btn active" data-ttype="depart" onclick="setTimeType(this)" data-i18n="depart">Depart at</button>
+          <button class="time-type-btn" data-ttype="arrive" onclick="setTimeType(this)" data-i18n="arrive">Arrive by</button>
+        </div>
+        <div class="time-inputs">
+          <input type="datetime-local" id="timePicker"/>
+          <button class="now-btn" onclick="setNow()" data-i18n="now">Now</button>
+        </div>
+      </div>
+      <button class="go-btn" id="goBtn" onclick="getRoute()"><span data-i18n="getRoute">GET ROUTE →</span></button>
+      <div class="divider"></div>
+      <div id="results">
+        <div class="empty-state">
+          <div class="big">🗺️</div>
+          <span data-i18n="emptyState">Enter origin & destination to see routes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script>
+// ── i18n ──────────────────────────────────────────────────────────────────────
+const STRINGS = {
+  en: {
+    planRoute:'Plan your route', travelMode:'Travel mode', timeLabel:'Departure / Arrival',
+    fromPlaceholder:'From (e.g. Tel Aviv Savidor)', toPlaceholder:'To (e.g. Dizengoff Center)',
+    transit:'Transit', drive:'Drive', walk:'Walk',
+    depart:'Depart at', arrive:'Arrive by', now:'Now',
+    getRoute:'GET ROUTE →', emptyState:'Enter origin & destination to see routes',
+    searching:'Searching...', finding:'Finding best routes...',
+    routesFound:(n)=>n+' route'+(n>1?'s':'')+' found',
+    noRoute:'Could not find a route. Try different locations.',
+    fillBoth:'Please enter both origin and destination.',
+    arrives:'Arrives', departs:'Departs',
+    fastest:'Fastest', bestNow:'Best right now',
+    lightTraffic:'Light traffic', modTraffic:'Moderate traffic', heavyTraffic:'Heavy traffic',
+    scheduled:'Scheduled', live:'Live', onTime:'On time', delayed:'delayed',
+    trafficLegend:'Traffic', free:'Free', moderate:'Moderate', heavy:'Heavy',
+    min:'min', hours:'hr',
+    dir:'ltr', lang:'en'
+  },
+  he: {
+    planRoute:'תכנן מסלול', travelMode:'אמצעי נסיעה', timeLabel:'יציאה / הגעה',
+    fromPlaceholder:'מאיפה (למשל: תל אביב סבידור)', toPlaceholder:'לאן (למשל: דיזנגוף סנטר)',
+    transit:'תחבורה', drive:'נסיעה', walk:'הליכה',
+    depart:'יציאה ב-', arrive:'הגעה עד', now:'עכשיו',
+    getRoute:'← חשב מסלול', emptyState:'הזן מוצא ויעד כדי לראות מסלולים',
+    searching:'...מחפש', finding:'...מוצא מסלולים',
+    routesFound:(n)=>'נמצאו '+n+' מסלולים',
+    noRoute:'לא נמצא מסלול. נסה מקומות אחרים.',
+    fillBoth:'אנא הזן גם מוצא וגם יעד.',
+    arrives:'מגיע', departs:'יוצא',
+    fastest:'המהיר ביותר', bestNow:'הטוב כרגע',
+    lightTraffic:'תנועה קלה', modTraffic:'תנועה בינונית', heavyTraffic:'פקק כבד',
+    scheduled:'לפי לוח זמנים', live:'בזמן אמת', onTime:'בזמן', delayed:'עיכוב',
+    trafficLegend:'תנועה', free:'חופשי', moderate:'בינוני', heavy:'עמוס',
+    min:'דק׳', hours:'שע׳',
+    dir:'rtl', lang:'he'
+  },
+  ru: {
+    planRoute:'Маршрут', travelMode:'Вид транспорта', timeLabel:'Отправление / Прибытие',
+    fromPlaceholder:'Откуда (напр. Тель-Авив Савидор)', toPlaceholder:'Куда (напр. Дизенгоф Центр)',
+    transit:'Автобус', drive:'Авто', walk:'Пешком',
+    depart:'Выехать в', arrive:'Прибыть к', now:'Сейчас',
+    getRoute:'МАРШРУТ →', emptyState:'Введите начало и конец маршрута',
+    searching:'Поиск...', finding:'Ищем маршруты...',
+    routesFound:(n)=>'Найдено маршрутов: '+n,
+    noRoute:'Маршрут не найден. Попробуйте другие места.',
+    fillBoth:'Введите начало и конец маршрута.',
+    arrives:'Прибытие', departs:'Отправление',
+    fastest:'Быстрейший', bestNow:'Лучший сейчас',
+    lightTraffic:'Свободно', modTraffic:'Средние пробки', heavyTraffic:'Пробки',
+    scheduled:'По расписанию', live:'Сейчас', onTime:'Вовремя', delayed:'задержка',
+    trafficLegend:'Трафик', free:'Свободно', moderate:'Средний', heavy:'Пробки',
+    min:'мин', hours:'ч',
+    dir:'ltr', lang:'ru'
+  }
+};
+
+let currentLang = 'en';
+let S = STRINGS.en;
+
+function setLang(lang) {
+  currentLang = lang; S = STRINGS[lang];
+  document.documentElement.lang = lang;
+  document.body.dir = S.dir;
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === (lang==='he'?'עב':lang==='ru'?'ру':lang));
+  });
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (S[key] && typeof S[key] === 'string') el.textContent = S[key];
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.dataset.i18nPlaceholder;
+    if (S[key]) el.placeholder = S[key];
+  });
+  if (window.originAC && window.destAC) reinitAutocomplete();
+  if (lastRoutes.length) showResults(lastRoutes);
+}
+
+// ── Time ──────────────────────────────────────────────────────────────────────
+let currentTimeType = 'depart';
+function setTimeType(btn) {
+  document.querySelectorAll('.time-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active'); currentTimeType = btn.dataset.ttype;
+}
+function setNow() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('timePicker').value = now.toISOString().slice(0,16);
+}
+function getSelectedTime() {
+  const val = document.getElementById('timePicker').value;
+  return val ? new Date(val) : new Date();
+}
+setNow();
+
+// ── Mode ──────────────────────────────────────────────────────────────────────
+let currentMode = 'TRANSIT';
+function setMode(btn) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active'); currentMode = btn.dataset.mode;
+}
+
+// ── Map & Traffic Layer ───────────────────────────────────────────────────────
+let map, directionsService, directionsRenderer, trafficLayer;
+let lastRoutes = [];
+let routePolylines = [];
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 32.0853, lng: 34.7818 }, zoom: 13,
+    styles: [
+      { elementType: 'geometry', stylers: [{ color: '#0a0f1e' }] },
+      { elementType: 'labels.text.fill', stylers: [{ color: '#8896b3' }] },
+      { elementType: 'labels.text.stroke', stylers: [{ color: '#0a0f1e' }] },
+      { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1a2438' }] },
+      { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#1e2d45' }] },
+      { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#243352' }] },
+      { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#060d1a' }] },
+      { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#111827' }] },
+      { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#1a2438' }] },
+      { featureType: 'transit.station', elementType: 'labels.text.fill', stylers: [{ color: '#00e5ff' }] },
+    ],
+    mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+  });
+
+  // Traffic layer removed — green lines were cluttering the map
+
+  directionsService = new google.maps.DirectionsService();
+  directionsRenderer = new google.maps.DirectionsRenderer({
+    map,
+    suppressPolylines: false,
+    polylineOptions: { strokeColor: '#00e5ff', strokeWeight: 5, strokeOpacity: 0.9 }
+  });
+
+  initAutocomplete();
+}
+
+function initAutocomplete() {
+  const bounds = new google.maps.LatLngBounds(
+    new google.maps.LatLng(29.5, 34.2), new google.maps.LatLng(33.3, 35.9)
+  );
+  const opts = { bounds, componentRestrictions: { country: 'il' } };
+  window.originAC = new google.maps.places.Autocomplete(document.getElementById('origin'), opts);
+  window.destAC = new google.maps.places.Autocomplete(document.getElementById('destination'), opts);
+}
+
+function reinitAutocomplete() {
+  google.maps.event.clearInstanceListeners(window.originAC);
+  google.maps.event.clearInstanceListeners(window.destAC);
+  initAutocomplete();
+}
+
+function formatTime(date) {
+  return date.toLocaleTimeString(S.lang === 'he' ? 'he-IL' : S.lang === 'ru' ? 'ru-RU' : 'en-IL', {
+    hour: '2-digit', minute: '2-digit', hour12: false
+  });
+}
+
+// ── Routing ───────────────────────────────────────────────────────────────────
+function getRoute() {
+  const origin = document.getElementById('origin').value.trim();
+  const destination = document.getElementById('destination').value.trim();
+  if (!origin || !destination) { showError(S.fillBoth); return; }
+
+  const btn = document.getElementById('goBtn');
+  btn.disabled = true;
+  btn.querySelector('[data-i18n]').textContent = S.searching;
+  showLoading();
+
+  const selectedTime = getSelectedTime();
+  const request = {
+    origin, destination,
+    travelMode: google.maps.TravelMode[currentMode],
+    provideRouteAlternatives: true,
+    region: 'il',
+  };
+
+  if (currentMode === 'DRIVING') {
+    request.drivingOptions = { departureTime: selectedTime, trafficModel: google.maps.TrafficModel.BEST_GUESS };
+  }
+  if (currentMode === 'TRANSIT') {
+    const transitOpts = { departureTime: selectedTime };
+    if (currentTimeType === 'arrive') { transitOpts.arrivalTime = selectedTime; delete transitOpts.departureTime; }
+    request.transitOptions = transitOpts;
+  }
+
+  directionsService.route(request, (result, status) => {
+    btn.disabled = false;
+    btn.querySelector('[data-i18n]').textContent = S.getRoute;
+    if (status === 'OK') {
+      lastRoutes = result.routes;
+      directionsRenderer.setDirections(result);
+      directionsRenderer.setRouteIndex(0);
+      showResults(lastRoutes);
+    } else {
+      showError(S.noRoute);
+    }
+  });
+}
+
+function showLoading() {
+  document.getElementById('results').innerHTML =
+    '<div class="loading"><div class="spinner"></div>' + S.finding + '</div>';
+}
+function showError(msg) {
+  document.getElementById('results').innerHTML = '<div class="error-msg">⚠️ ' + msg + '</div>';
+}
+
+// ── Results with all 3 features ───────────────────────────────────────────────
+function showResults(routes) {
+  // Find best route right now (lowest live duration)
+  let bestNowIndex = 0;
+  let bestNowValue = Infinity;
+  routes.forEach((route, i) => {
+    const leg = route.legs[0];
+    const liveVal = leg.duration_in_traffic ? leg.duration_in_traffic.value : leg.duration.value;
+    if (liveVal < bestNowValue) { bestNowValue = liveVal; bestNowIndex = i; }
+  });
+
+  const legendHTML = '<div class="traffic-legend">' +
+    '<span class="legend-title">🚦 ' + S.trafficLegend + ':</span>' +
+    '<div class="legend-items">' +
+      '<div class="legend-item"><div class="legend-dot green"></div>' + S.free + '</div>' +
+      '<div class="legend-item"><div class="legend-dot orange"></div>' + S.moderate + '</div>' +
+      '<div class="legend-item"><div class="legend-dot red"></div>' + S.heavy + '</div>' +
+    '</div></div>';
+
+  const html = routes.map((route, i) => {
+    const leg = route.legs[0];
+
+    // Departure time — from Google's data or fallback to selected time
+    const departTime = leg.departure_time
+      ? new Date(leg.departure_time.value * 1000)
+      : getSelectedTime();
+
+    // Arrival time — from Google's data or calculated
+    const scheduledDuration = leg.duration.value;
+    const liveDuration = leg.duration_in_traffic ? leg.duration_in_traffic.value : null;
+    const arrivalTime = leg.arrival_time
+      ? new Date(leg.arrival_time.value * 1000)
+      : new Date(departTime.getTime() + (liveDuration || scheduledDuration) * 1000);
+
+    // Translate duration text (e.g. "52 mins" → "52 דק׳")
+    function translateDuration(text) {
+      if (!text) return text;
+      return text
+        .replace(/(\d+)\s*hour[s]?/g, (_, n) => n + ' ' + (S.hours || 'h'))
+        .replace(/(\d+)\s*min[s]?/g, (_, n) => n + ' ' + (S.min || 'min'));
+    }
+    const rawDurationText = leg.duration_in_traffic ? leg.duration_in_traffic.text : leg.duration.text;
+    const displayDurationText = translateDuration(rawDurationText);
+
+    // ── Feature 1: Scheduled vs Live comparison ──
+    let compareHTML = '';
+    if (liveDuration && currentMode === 'DRIVING') {
+      const diff = liveDuration - scheduledDuration;
+      const diffMins = Math.round(diff / 60);
+      const isDelayed = diff > 120; // more than 2 min difference
+      const schedText = leg.duration.text;
+      const liveText = leg.duration_in_traffic.text;
+      if (isDelayed) {
+        compareHTML = '<div class="traffic-compare">' +
+          '<span class="sched-time">⏱ ' + schedText + '</span>' +
+          '<span class="delay-arrow">→</span>' +
+          '<span class="live-time delayed">🔴 ' + liveText + '</span>' +
+          '<span class="delay-pill delayed">+' + diffMins + ' min</span>' +
+        '</div>';
+      } else {
+        compareHTML = '<div class="traffic-compare">' +
+          '<span class="live-time on-time">✅ ' + S.onTime + '</span>' +
+          '<span class="delay-pill on-time">' + schedText + '</span>' +
+        '</div>';
+      }
+    }
+
+    // For transit: estimate delay using step-level traffic data
+    if (currentMode === 'TRANSIT') {
+      // Check if any driving steps (bus on road) have significant duration
+      const drivingSteps = (leg.steps || []).filter(s => s.travel_mode === 'DRIVING');
+      const hasRoadSegments = drivingSteps.length > 0;
+      // We can only show scheduled info for transit since Google doesn't give us duration_in_traffic for buses
+      // Instead show a note when bus uses highway/road segments
+      if (hasRoadSegments) {
+        compareHTML = '<div class="traffic-compare">' +
+          '<span class="live-time" style="color:var(--warning)">🛣️ Uses road — check traffic map</span>' +
+        '</div>';
+      }
+    }
+
+    // ── Feature 2 badge: Best right now ──
+    const isBestNow = i === bestNowIndex;
+    const badgesHTML = '<div class="result-badges">' +
+      (isBestNow ? '<span class="best-now-badge">⚡ ' + S.bestNow + '</span>' : '') +
+    '</div>';
+
+    // Traffic badge (driving only)
+    let trafficClass = '', trafficLabel = '';
+    if (currentMode === 'DRIVING' && leg.duration_in_traffic) {
+      const ratio = leg.duration_in_traffic.value / leg.duration.value;
+      if (ratio < 1.15) { trafficClass = 'traffic-low'; trafficLabel = S.lightTraffic; }
+      else if (ratio < 1.4) { trafficClass = 'traffic-med'; trafficLabel = S.modTraffic; }
+      else { trafficClass = 'traffic-high'; trafficLabel = S.heavyTraffic; }
+    }
+
+    // Steps (with translated durations)
+    const steps = (leg.steps || []).slice(0, 6).map(step => {
+      const stepDur = translateDuration(step.duration.text);
+      if (step.travel_mode === 'TRANSIT') {
+        const line = step.transit && step.transit.line ? (step.transit.line.short_name || step.transit.line.name || '') : '';
+        return '<span class="step-tag transit">🚌 ' + line + '</span>';
+      } else if (step.travel_mode === 'WALKING') {
+        return '<span class="step-tag">🚶 ' + stepDur + '</span>';
+      }
+      return '<span class="step-tag">🚗 ' + stepDur + '</span>';
+    }).join('');
+
+    return '<div class="result-card ' + (i===0?'selected ':'') + (isBestNow?'best-now':'') + '" onclick="selectRoute('+i+', this)">' +
+      '<div class="result-top">' +
+        '<div class="result-times">' +
+          '<div class="result-duration">' + displayDurationText + '</div>' +
+          '<div class="result-depart">🕐 ' + S.departs + ': ' + formatTime(departTime) + '</div>' +
+          '<div class="result-arrival">🏁 ' + S.arrives + ': ' + formatTime(arrivalTime) + '</div>' +
+          compareHTML +
+        '</div>' +
+        '<div class="result-badges">' +
+          (isBestNow ? '<span class="best-now-badge">⚡ ' + S.bestNow + '</span>' : '') +
+          (trafficClass ? '<span class="traffic-badge ' + trafficClass + '">' + trafficLabel + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="result-steps">' + (steps || '<span class="step-tag">Direct</span>') + '</div>' +
+      '<div class="result-meta">' + leg.distance.text + '</div>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('results').innerHTML =
+    '<div class="section-label">' + S.routesFound(routes.length) + '</div>' +
+    legendHTML +
+    '<div class="results-list">' + html + '</div>';
+}
+
+function selectRoute(index, el) {
+  document.querySelectorAll('.result-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  directionsRenderer.setRouteIndex(index);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') getRoute(); });
+</script>
+
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxdWQ_suSxmA9PnfWcCMO2ClkIdpKvF88&libraries=places&callback=initMap&language=en&region=IL">
+</script>
+</body>
+</html>
